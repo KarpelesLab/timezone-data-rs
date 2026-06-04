@@ -1,0 +1,17 @@
+[package]
+name = "timezone-data"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.86"
+license = "MIT"
+description = "no_std, no-alloc parser for embedded IANA TZif timezone data: transitions, zone types, POSIX TZ rules, leap seconds, and zone metadata."
+repository = "https://github.com/KarpelesLab/timezone-data-rs"
+keywords = ["timezone", "tzdata", "tzif", "iana", "no_std"]
+categories = ["date-and-time", "no-std", "parser-implementations"]
+readme = "README.md"
+exclude = ["/.github"]
+
+[dependencies]
+
+[lints.rust]
+unsafe_code = "forbid"
