@@ -1,5 +1,10 @@
 # timezone-data
 
+[![Tests](https://github.com/KarpelesLab/timezone-data-rs/actions/workflows/test.yml/badge.svg)](https://github.com/KarpelesLab/timezone-data-rs/actions/workflows/test.yml)
+[![crates.io](https://img.shields.io/crates/v/timezone-data.svg)](https://crates.io/crates/timezone-data)
+[![docs.rs](https://img.shields.io/docsrs/timezone-data)](https://docs.rs/timezone-data)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A `#![no_std]`, allocation-free Rust crate that parses IANA TZif timezone files
 and exposes the raw timezone data most libraries keep private: transitions, zone
 types, POSIX `TZ` rules, leap seconds, and per-zone metadata.
