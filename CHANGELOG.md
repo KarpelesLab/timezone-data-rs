@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.1](https://github.com/KarpelesLab/timezone-data-rs/compare/v0.2.0...v0.2.1) - 2026-06-07
+
+### Other
+
+- add CHANGELOG with 0.1.0 and 0.2.0 history
+- make the root a single crate again (xtask is its own workspace)
+
 ## [0.2.0] - 2026-06-07
 
 The embedded data is now **pre-parsed at build time into static Rust objects**
