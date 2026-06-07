@@ -1,17 +1,12 @@
 //! Ports of gotz's zone_test.go (Unix-timestamp based).
 
-use timezone_data::{load, names, parse, Error};
-
-// Helper: collect a zone's types into a Vec for convenient assertions.
-fn types_of(z: &timezone_data::Zone<'static>) -> Vec<timezone_data::ZoneType<'static>> {
-    z.types().collect()
-}
+use timezone_data::{load, names, Error};
 
 #[test]
 fn load_utc() {
     let z = load("UTC").unwrap();
     assert_eq!(z.name(), "UTC");
-    let types: Vec<_> = z.types().collect();
+    let types = z.types();
     assert_eq!(types.len(), 1);
     assert_eq!(types[0].abbrev, "UTC");
     assert_eq!(types[0].offset, 0);
@@ -24,12 +19,12 @@ fn load_new_york() {
     assert_eq!(z.name(), "America/New_York");
     assert!(z.version() >= 2);
 
-    let types = types_of(&z);
+    let types = z.types();
     assert!(types.len() >= 2);
 
     let mut found_est = false;
     let mut found_edt = false;
-    for zt in &types {
+    for zt in types {
         match zt.abbrev {
             "EST" => {
                 found_est = true;
@@ -47,7 +42,7 @@ fn load_new_york() {
     assert!(found_est, "EST not found");
     assert!(found_edt, "EDT not found");
 
-    assert!(z.transitions().count() >= 100);
+    assert!(z.transitions().len() >= 100);
     assert!(z.extend().is_some());
     assert!(!z.extend_raw().is_empty());
 }
@@ -57,6 +52,7 @@ fn load_tokyo() {
     let z = load("Asia/Tokyo").unwrap();
     let found_jst = z
         .types()
+        .iter()
         .any(|zt| zt.abbrev == "JST" && zt.offset == 9 * 3600);
     assert!(found_jst, "JST not found");
 }
@@ -114,24 +110,22 @@ fn load_not_found() {
 }
 
 #[test]
-fn parse_paris() {
-    let data = {
-        // Pull raw bytes back out via a known zone load's raw_data is the same path,
-        // but to exercise parse() directly we load and re-parse its raw data.
-        let z = load("Europe/Paris").unwrap();
-        z.raw_data()
-    };
-    let z = parse("Europe/Paris", data).unwrap();
+fn load_paris() {
+    let z = load("Europe/Paris").unwrap();
     assert_eq!(z.name(), "Europe/Paris");
-    let found_cet = z.types().any(|zt| zt.abbrev == "CET" && zt.offset == 3600);
+    let found_cet = z
+        .types()
+        .iter()
+        .any(|zt| zt.abbrev == "CET" && zt.offset == 3600);
     assert!(found_cet, "CET not found");
 }
 
 #[test]
-fn names_count() {
+fn names_are_zones_only() {
     let all: Vec<_> = names().collect();
-    assert_eq!(all.len(), 600);
+    assert_eq!(all.len(), 598);
     assert!(all.contains(&"US/Eastern"));
-    assert!(all.contains(&"iso3166.tab"));
-    assert!(all.contains(&"zone1970.tab"));
+    // The metadata tables are not loadable zones and are excluded from names().
+    assert!(!all.contains(&"iso3166.tab"));
+    assert!(!all.contains(&"zone1970.tab"));
 }

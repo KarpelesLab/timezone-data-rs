@@ -3,7 +3,10 @@
 //! Both tables are embedded in `zoneinfo.zip` and scanned on demand; no index
 //! is built and nothing is allocated.
 
-use crate::db;
+/// `zone1970.tab` and `iso3166.tab`, written alongside the generated zones by
+/// `xtask` and embedded as text.
+const ZONE1970_TAB: &str = include_str!("zone1970.tab");
+const ISO3166_TAB: &str = include_str!("iso3166.tab");
 
 /// Metadata about a timezone: associated countries and principal coordinates.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -39,9 +42,7 @@ impl ZoneMeta<'static> {
 
 /// Returns metadata for the timezone named `name`, or `None` if unavailable.
 pub fn meta(name: &str) -> Option<ZoneMeta<'static>> {
-    let data = db::file("zone1970.tab")?;
-    let text = core::str::from_utf8(data).ok()?;
-    for line in text.split('\n') {
+    for line in ZONE1970_TAB.split('\n') {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
@@ -69,12 +70,7 @@ pub fn meta(name: &str) -> Option<ZoneMeta<'static>> {
 
 /// Looks up the country name for an ISO 3166-1 alpha-2 `code`.
 fn iso_name(code: &str) -> &'static str {
-    let data = match db::file("iso3166.tab") {
-        Some(d) => d,
-        None => return "",
-    };
-    let text = core::str::from_utf8(data).unwrap_or("");
-    for line in text.split('\n') {
+    for line in ISO3166_TAB.split('\n') {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }

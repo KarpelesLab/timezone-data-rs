@@ -27,9 +27,9 @@ jobs:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       # Regenerate from zoneinfo.zip and fail if the committed output differs,
-      # so the published crate always ships the current extracted data.
+      # so the published crate always ships the current pre-parsed data.
       - run: cargo run -p xtask
-      - run: git diff --exit-code -- src/zoneinfo src/generated.rs
+      - run: git diff --exit-code -- src/generated.rs src/zone1970.tab src/iso3166.tab
 
   no_std:
     name: Bare-metal build (no_std, no alloc)

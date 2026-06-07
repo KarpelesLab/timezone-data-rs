@@ -5,3 +5,5 @@ edition = "2021"
 publish = false
 
 [dependencies]
+# Used only to parse the POSIX TZ footer when generating static data.
+timezone-data = { path = ".." }

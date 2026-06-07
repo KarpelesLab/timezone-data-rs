@@ -5,28 +5,28 @@
 [![docs.rs](https://img.shields.io/docsrs/timezone-data)](https://docs.rs/timezone-data)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A `#![no_std]`, allocation-free Rust crate that parses IANA TZif timezone files
-and exposes the raw timezone data most libraries keep private: transitions, zone
-types, POSIX `TZ` rules, leap seconds, and per-zone metadata.
+A `#![no_std]`, allocation-free Rust crate that exposes IANA timezone data most
+libraries keep private: transitions, zone types, POSIX `TZ` rules, leap seconds,
+and per-zone metadata.
 
-Timezone data is compiled from the [official IANA source](https://data.iana.org/time-zones/releases/)
-and embedded in the crate as individual TZif files, so there is no dependency on
-the host system's timezone files, no archive to parse at runtime, and **no
-external crate dependencies at all**. The files are extracted ahead of time and
-committed, so building the crate is just a plain compile — there is no build
-script.
+Every zone from the [official IANA source](https://data.iana.org/time-zones/releases/)
+is **pre-parsed at build time into static Rust objects** and embedded in the
+crate, so there is no dependency on the host system's timezone files, nothing is
+parsed at runtime, and there are **no external crate dependencies at all**. A
+lookup is a binary search over `&'static` data.
 
 This is a Rust port of the Go package [`gotz`](https://github.com/KarpelesLab/gotz).
 
 ## Highlights
 
-- **`no_std` + no `alloc`.** Everything borrows into the embedded `&'static`
-  bytes and decodes lazily through iterators. Nothing is heap-allocated.
-- **No runtime archive parsing and no build script.** Each TZif file is embedded
-  directly; a zone lookup is a binary search over a static table.
+- **`no_std` + no `alloc`.** Accessors return slices that point straight at
+  `&'static` data. Nothing is heap-allocated.
+- **Nothing parsed at runtime, no build script.** Each zone is materialised as
+  static `ZoneType` / `Transition` arrays + a const POSIX rule; `load()` just
+  binary-searches a static table.
 - **Zero dependencies.**
-- **Complete IANA database** embedded (600 entries, including the `zone1970.tab`
-  and `iso3166.tab` metadata tables).
+- **Complete IANA database** embedded (598 zones, plus the `zone1970.tab` /
+  `iso3166.tab` metadata tables).
 
 ## Usage
 
@@ -67,9 +67,7 @@ if let Some(m) = z.meta() {
 ```
 
 Times are expressed as `i64` Unix seconds — the crate is timezone-library
-agnostic. If you need a `chrono`/`time` value, convert at the boundary;
-[`Zone::raw_data`] also returns the original TZif bytes for feeding into another
-parser.
+agnostic. If you need a `chrono`/`time` value, convert at the boundary.
 
 ## API overview
 
@@ -77,8 +75,7 @@ parser.
 |------|-------------|
 | `load(name) -> Result<Zone, Error>` | Load a zone by IANA name (`""`/`"UTC"` → UTC). |
 | `load_insensitive(name)` | Load with case-insensitive fallback. |
-| `parse(name, data)` | Parse arbitrary TZif bytes. |
-| `names()` | Iterate every embedded entry name. |
+| `names()` | Iterate every IANA zone name. |
 | `Zone::types()` / `type_at(i)` | Local time types (abbrev, offset, DST flag). |
 | `Zone::transitions()` | Stored transition records. |
 | `Zone::leap_seconds()` | Leap-second records. |
@@ -91,9 +88,9 @@ parser.
 ## Updating the embedded data
 
 `zoneinfo.zip` is committed to the repository purely as the data source for the
-generator; it is **not** part of the published crate. The extracted files
-(`src/zoneinfo/`) and the lookup table (`src/generated.rs`) are committed and
-are what gets shipped, so consumers compile a static table with no extraction.
+generator; it is **not** part of the published crate. The generated table
+(`src/generated.rs`) and the metadata tables (`src/zone1970.tab`,
+`src/iso3166.tab`) are committed and are what gets shipped.
 
 To refresh from a new IANA release:
 
@@ -101,8 +98,8 @@ To refresh from a new IANA release:
    zip — the generator does not implement inflate. The original `gotz`
    repository's `update.sh` / `mkzip.go` produce a compatible archive.
 2. Replace `zoneinfo.zip` in this crate's root.
-3. Run `cargo run -p xtask` to regenerate `src/zoneinfo/` and `src/generated.rs`,
-   then commit the result.
+3. Run `cargo run -p xtask` to regenerate `src/generated.rs` and the `.tab`
+   files, then commit the result.
 
 CI re-runs the generator and fails if the committed output is stale, so a
 release always ships the current data.

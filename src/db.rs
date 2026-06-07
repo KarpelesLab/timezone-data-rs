@@ -1,28 +1,29 @@
-//! The embedded timezone database: a sorted table of `(name, TZif bytes)`.
+//! The embedded timezone database: a sorted table of `(name, Zone)`.
 //!
 //! The table lives in `generated.rs`, produced ahead of time by the `xtask`
-//! generator (`cargo run -p xtask`), which unpacks `zoneinfo.zip` into the
-//! committed `src/zoneinfo/` files and emits one `include_bytes!` per entry.
-//! Building the library never touches the archive; lookups are a binary search
-//! over `&'static` data.
+//! generator (`cargo run -p xtask`), which pre-parses every TZif file in
+//! `zoneinfo.zip` into static Rust objects. Lookups are a binary search over
+//! `&'static` data — nothing is parsed at runtime.
 
-// `pub static ENTRIES: &[(&str, &[u8])]`, sorted by name.
-include!("generated.rs");
+use crate::Zone;
 
-/// Returns the canonical name and bytes of the entry named `name`.
-pub fn find(name: &str) -> Option<(&'static str, &'static [u8])> {
+// `pub static ENTRIES: &[(&str, Zone)]`, sorted by name. The module wrapper
+// keeps lints off the large generated file.
+#[allow(unused_imports, clippy::all, clippy::pedantic, clippy::nursery)]
+mod generated {
+    include!("generated.rs");
+}
+use generated::ENTRIES;
+
+/// Returns the [`Zone`] named `name`, or `None`.
+pub fn find(name: &str) -> Option<Zone> {
     ENTRIES
         .binary_search_by_key(&name, |&(n, _)| n)
         .ok()
-        .map(|i| ENTRIES[i])
+        .map(|i| ENTRIES[i].1)
 }
 
-/// Returns just the bytes of the entry named `name`.
-pub fn file(name: &str) -> Option<&'static [u8]> {
-    find(name).map(|(_, data)| data)
-}
-
-/// Returns an iterator over every entry name, in sorted order.
+/// Returns an iterator over every zone name, in sorted order.
 pub fn names() -> impl Iterator<Item = &'static str> {
     ENTRIES.iter().map(|&(n, _)| n)
 }
