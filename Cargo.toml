@@ -9,9 +9,15 @@ repository = "https://github.com/KarpelesLab/timezone-data-rs"
 keywords = ["timezone", "tzdata", "tzif", "iana", "no_std"]
 categories = ["date-and-time", "no-std", "parser-implementations"]
 readme = "README.md"
-exclude = ["/.github"]
+# The published crate ships the pre-extracted TZif files (src/zoneinfo/ +
+# src/generated.rs); the zip and the generator are build-time-only.
+exclude = ["/.github", "/xtask", "/zoneinfo.zip"]
 
 [dependencies]
 
 [lints.rust]
 unsafe_code = "forbid"
+
+[workspace]
+members = ["xtask"]
+resolver = "2"

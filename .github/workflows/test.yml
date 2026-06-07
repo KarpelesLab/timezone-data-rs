@@ -20,6 +20,17 @@ jobs:
       - run: cargo test --all-targets
       - run: cargo test --doc
 
+  data:
+    name: Embedded data is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      # Regenerate from zoneinfo.zip and fail if the committed output differs,
+      # so the published crate always ships the current extracted data.
+      - run: cargo run -p xtask
+      - run: git diff --exit-code -- src/zoneinfo src/generated.rs
+
   no_std:
     name: Bare-metal build (no_std, no alloc)
     runs-on: ubuntu-latest
@@ -30,4 +41,4 @@ jobs:
           targets: thumbv7em-none-eabi
       # Building the library for a target with no std proves it never touches
       # std or alloc; any accidental use would fail to compile here.
-      - run: cargo build --lib --target thumbv7em-none-eabi
+      - run: cargo build -p timezone-data --lib --target thumbv7em-none-eabi

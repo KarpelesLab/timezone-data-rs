@@ -10,10 +10,11 @@ and exposes the raw timezone data most libraries keep private: transitions, zone
 types, POSIX `TZ` rules, leap seconds, and per-zone metadata.
 
 Timezone data is compiled from the [official IANA source](https://data.iana.org/time-zones/releases/)
-and embedded in the crate as individual TZif files — generated at build time
-from the bundled `zoneinfo.zip` — so there is no dependency on the host system's
-timezone files, no archive to parse at runtime, and **no external crate
-dependencies at all**.
+and embedded in the crate as individual TZif files, so there is no dependency on
+the host system's timezone files, no archive to parse at runtime, and **no
+external crate dependencies at all**. The files are extracted ahead of time and
+committed, so building the crate is just a plain compile — there is no build
+script.
 
 This is a Rust port of the Go package [`gotz`](https://github.com/KarpelesLab/gotz).
 
@@ -21,9 +22,9 @@ This is a Rust port of the Go package [`gotz`](https://github.com/KarpelesLab/go
 
 - **`no_std` + no `alloc`.** Everything borrows into the embedded `&'static`
   bytes and decodes lazily through iterators. Nothing is heap-allocated.
-- **No runtime archive parsing.** Each TZif file is embedded directly; a zone
-  lookup is a binary search over a static table.
-- **Zero dependencies** (the build script uses only `std`).
+- **No runtime archive parsing and no build script.** Each TZif file is embedded
+  directly; a zone lookup is a binary search over a static table.
+- **Zero dependencies.**
 - **Complete IANA database** embedded (600 entries, including the `zone1970.tab`
   and `iso3166.tab` metadata tables).
 
@@ -89,13 +90,22 @@ parser.
 
 ## Updating the embedded data
 
-`zoneinfo.zip` is committed to the repository as the build-time data source.
-`build.rs` unpacks it into individual files and generates the embedded lookup
-table, so the archive must use **no compression** (STORE) — the unpacker does
-not implement inflate. To refresh it from a new IANA release, compile the tzdata
-with `zic` and repackage it as a STORE zip (the original `gotz` repository's
-`update.sh` / `mkzip.go` produce a compatible archive); copy the resulting
-`zoneinfo.zip` into this crate's root and rebuild.
+`zoneinfo.zip` is committed to the repository purely as the data source for the
+generator; it is **not** part of the published crate. The extracted files
+(`src/zoneinfo/`) and the lookup table (`src/generated.rs`) are committed and
+are what gets shipped, so consumers compile a static table with no extraction.
+
+To refresh from a new IANA release:
+
+1. Compile the tzdata with `zic` and repackage it as a **STORE** (uncompressed)
+   zip — the generator does not implement inflate. The original `gotz`
+   repository's `update.sh` / `mkzip.go` produce a compatible archive.
+2. Replace `zoneinfo.zip` in this crate's root.
+3. Run `cargo run -p xtask` to regenerate `src/zoneinfo/` and `src/generated.rs`,
+   then commit the result.
+
+CI re-runs the generator and fails if the committed output is stale, so a
+release always ships the current data.
 
 ## License
 
