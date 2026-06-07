@@ -110,6 +110,69 @@ fn load_not_found() {
 }
 
 #[test]
+fn load_empty_is_utc() {
+    assert_eq!(load("").unwrap().name(), "UTC");
+}
+
+#[test]
+fn load_insensitive_cases() {
+    use timezone_data::load_insensitive;
+    // Exact match still works.
+    assert_eq!(
+        load_insensitive("America/New_York").unwrap().name(),
+        "America/New_York"
+    );
+    // Case-insensitive fallback.
+    assert_eq!(
+        load_insensitive("america/new_york").unwrap().name(),
+        "America/New_York"
+    );
+    assert_eq!(load_insensitive("utc").unwrap().name(), "UTC");
+    // Still fails for genuinely unknown zones.
+    assert_eq!(
+        load_insensitive("Nope/Nowhere").unwrap_err(),
+        Error::NotFound
+    );
+}
+
+#[test]
+fn lookup_before_first_transition() {
+    // A timestamp far before any stored transition falls back to the first
+    // non-DST type (LMT for New York).
+    let z = load("America/New_York").unwrap();
+    let early = z.lookup(-5_000_000_000); // ~1812
+    assert_eq!(early.abbrev, "LMT");
+    assert!(!early.is_dst);
+}
+
+#[test]
+fn lookup_utc_has_no_transitions() {
+    // UTC has a single type and no transitions — exercises the empty-transitions
+    // branch of lookup.
+    let z = load("UTC").unwrap();
+    assert!(z.transitions().is_empty());
+    assert_eq!(z.lookup(0).abbrev, "UTC");
+    assert_eq!(z.lookup(1_700_000_000).offset, 0);
+}
+
+#[test]
+fn transitions_for_range_southern_hemisphere() {
+    // Sydney's DST runs Oct->Apr, so within a calendar year the std (April) and
+    // DST (October) transitions arrive in the opposite order from the northern
+    // hemisphere. This exercises the chronological-ordering branch.
+    let z = load("Australia/Sydney").unwrap();
+    let trans: Vec<_> = z.transitions_for_range(Y2024, Y2025).collect();
+    assert_eq!(trans.len(), 2);
+    // April: DST -> std (AEST).
+    assert_eq!(trans[0].zone_type.abbrev, "AEST");
+    assert!(!trans[0].zone_type.is_dst);
+    // October: std -> DST (AEDT).
+    assert_eq!(trans[1].zone_type.abbrev, "AEDT");
+    assert!(trans[1].zone_type.is_dst);
+    assert!(trans[0].when < trans[1].when, "must be chronological");
+}
+
+#[test]
 fn load_paris() {
     let z = load("Europe/Paris").unwrap();
     assert_eq!(z.name(), "Europe/Paris");
