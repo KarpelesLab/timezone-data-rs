@@ -28,7 +28,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       # Regenerate from zoneinfo.zip and fail if the committed output differs,
       # so the published crate always ships the current pre-parsed data.
-      - run: cargo run -p xtask
+      - run: cargo run --manifest-path xtask/Cargo.toml
       - run: git diff --exit-code -- src/generated.rs src/zone1970.tab src/iso3166.tab
 
   no_std:
@@ -41,4 +41,4 @@ jobs:
           targets: thumbv7em-none-eabi
       # Building the library for a target with no std proves it never touches
       # std or alloc; any accidental use would fail to compile here.
-      - run: cargo build -p timezone-data --lib --target thumbv7em-none-eabi
+      - run: cargo build --lib --target thumbv7em-none-eabi

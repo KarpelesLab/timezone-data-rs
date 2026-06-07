@@ -4,6 +4,10 @@ version = "0.0.0"
 edition = "2021"
 publish = false
 
+# Standalone build tool — its own workspace so the library crate at the
+# repository root is a plain single-crate package (not a workspace).
+[workspace]
+
 [dependencies]
 # Used only to parse the POSIX TZ footer when generating static data.
 timezone-data = { path = ".." }

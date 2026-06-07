@@ -98,8 +98,8 @@ To refresh from a new IANA release:
    zip — the generator does not implement inflate. The original `gotz`
    repository's `update.sh` / `mkzip.go` produce a compatible archive.
 2. Replace `zoneinfo.zip` in this crate's root.
-3. Run `cargo run -p xtask` to regenerate `src/generated.rs` and the `.tab`
-   files, then commit the result.
+3. Run `cargo run --manifest-path xtask/Cargo.toml` to regenerate
+   `src/generated.rs` and the `.tab` files, then commit the result.
 
 CI re-runs the generator and fails if the committed output is stale, so a
 release always ships the current data.
