@@ -21,6 +21,7 @@ fn load_new_york() {
 
     let types = z.types();
     assert!(types.len() >= 2);
+    assert_eq!(z.type_count(), types.len());
 
     let mut found_est = false;
     let mut found_edt = false;

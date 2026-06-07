@@ -104,6 +104,11 @@ impl Zone {
         self.extend_raw
     }
 
+    /// The number of local time types.
+    pub fn type_count(&self) -> usize {
+        self.types.len()
+    }
+
     /// Returns the `i`-th local time type. Panics if `i >= types().len()`.
     pub fn type_at(&self, i: usize) -> ZoneType {
         self.types[i]
