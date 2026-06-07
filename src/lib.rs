@@ -3,9 +3,10 @@
 //! and metadata that most timezone libraries keep private.
 //!
 //! Timezone data is compiled from the official IANA source and embedded in the
-//! crate as an uncompressed zip archive, so there is no dependency on the host
-//! system's timezone files. The crate is `#![no_std]` and never allocates:
-//! every accessor borrows into the embedded bytes and decodes records lazily.
+//! crate as individual TZif files, so there is no dependency on the host
+//! system's timezone files and no archive to parse at runtime. The crate is
+//! `#![no_std]` and never allocates: every accessor borrows into the embedded
+//! bytes and decodes records lazily.
 //!
 //! # Example
 //!
@@ -31,26 +32,23 @@
 #![no_std]
 #![forbid(unsafe_code)]
 
+mod db;
 mod error;
 mod meta;
 mod parse;
 mod posix;
-mod zipstore;
 
 pub use error::Error;
 pub use meta::{meta, parse_iso6709, Country, ZoneMeta};
 pub use parse::{parse, LeapSecond, RangeTransition, Transition, Zone, ZoneType};
 pub use posix::{parse_posix_tz, PosixTz, RuleKind, TransitionRule};
 
-/// The embedded IANA timezone database (an uncompressed zip archive).
-pub(crate) static ZONEINFO_ZIP: &[u8] = include_bytes!("../zoneinfo.zip");
-
 /// Loads a [`Zone`] by IANA timezone name from the embedded database.
 ///
 /// An empty name or `"UTC"` resolves to the `UTC` zone.
 pub fn load(name: &str) -> Result<Zone<'static>, Error> {
     let query = if name.is_empty() { "UTC" } else { name };
-    let (canonical, data) = zipstore::find_named(ZONEINFO_ZIP, query)?;
+    let (canonical, data) = db::find(query).ok_or(Error::NotFound)?;
     parse(canonical, data)
 }
 
@@ -72,7 +70,7 @@ pub fn load_insensitive(name: &str) -> Result<Zone<'static>, Error> {
 /// This includes the data tables `iso3166.tab` and `zone1970.tab`, which are
 /// not loadable as zones.
 pub fn names() -> impl Iterator<Item = &'static str> {
-    zipstore::names(ZONEINFO_ZIP)
+    db::names()
 }
 
 impl Zone<'_> {

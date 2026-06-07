@@ -3,8 +3,7 @@
 //! Both tables are embedded in `zoneinfo.zip` and scanned on demand; no index
 //! is built and nothing is allocated.
 
-use crate::zipstore;
-use crate::ZONEINFO_ZIP;
+use crate::db;
 
 /// Metadata about a timezone: associated countries and principal coordinates.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -40,7 +39,7 @@ impl ZoneMeta<'static> {
 
 /// Returns metadata for the timezone named `name`, or `None` if unavailable.
 pub fn meta(name: &str) -> Option<ZoneMeta<'static>> {
-    let data = zipstore::find(ZONEINFO_ZIP, "zone1970.tab").ok()?;
+    let data = db::file("zone1970.tab")?;
     let text = core::str::from_utf8(data).ok()?;
     for line in text.split('\n') {
         if line.is_empty() || line.starts_with('#') {
@@ -70,9 +69,9 @@ pub fn meta(name: &str) -> Option<ZoneMeta<'static>> {
 
 /// Looks up the country name for an ISO 3166-1 alpha-2 `code`.
 fn iso_name(code: &str) -> &'static str {
-    let data = match zipstore::find(ZONEINFO_ZIP, "iso3166.tab") {
-        Ok(d) => d,
-        Err(_) => return "",
+    let data = match db::file("iso3166.tab") {
+        Some(d) => d,
+        None => return "",
     };
     let text = core::str::from_utf8(data).unwrap_or("");
     for line in text.split('\n') {

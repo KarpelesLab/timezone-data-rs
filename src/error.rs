@@ -10,8 +10,6 @@ pub enum Error {
     NotFound,
     /// The TZif binary data is malformed. The payload is a short reason.
     BadData(&'static str),
-    /// The embedded zip archive could not be read. The payload is a short reason.
-    BadZip(&'static str),
     /// A POSIX TZ string could not be parsed. The payload is a short reason.
     BadPosixTz(&'static str),
 }
@@ -21,7 +19,6 @@ impl fmt::Display for Error {
         match self {
             Error::NotFound => f.write_str("timezone not found in embedded data"),
             Error::BadData(why) => write!(f, "malformed timezone data: {why}"),
-            Error::BadZip(why) => write!(f, "malformed zip archive: {why}"),
             Error::BadPosixTz(why) => write!(f, "malformed POSIX TZ string: {why}"),
         }
     }
